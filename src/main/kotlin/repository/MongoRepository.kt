@@ -1,51 +1,28 @@
 package org.kotMongo.repository
 
-import com.mongodb.client.MongoCollection
-import com.mongodb.client.MongoDatabase
-import com.mongodb.client.model.Filters
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
-import org.kotMongo.annotations.Document
 import kotlin.reflect.KClass
-import kotlin.reflect.full.findAnnotation
-import kotlinx.serialization.InternalSerializationApi
-import org.bson.Document as BsonDocument
+import org.kotMongo.mongo.Filter
 
-@OptIn(InternalSerializationApi::class)
-class MongoRepository<T : Any>(
-    private val clazz: KClass<T>,
-    val db: MongoDatabase
-) : CrudRepository<T> {
+abstract class MongoRepository<T: Any>(private val entityClass: KClass<T>) {
+    private val provider = MongoProvider()
 
-    private val json = Json { ignoreUnknownKeys = true }
-
-    private val collection: MongoCollection<BsonDocument>
-
-    init {
-        val docAnnotation = clazz.findAnnotation<Document>()
-            ?: throw IllegalArgumentException("Class ${clazz.simpleName} is not annotated with @Document")
-
-        collection = db.getCollection(docAnnotation.value)
-
+    fun insert(entity: T): T {
+        return provider.insert(entity)
     }
 
-    override fun insert(entity: T) {
-        val json = Json.encodeToString(clazz.serializer(), entity)
-        val document = BsonDocument.parse(json)
-        collection.insertOne(document)
+    fun insertMany(entities: List<T>): List<T> {
+        return provider.insertMany(entities)
     }
 
-    override fun findById(id: String): T? {
-        val doc = collection.find(Filters.eq("id", id)).first() ?: return null
-        println("📦 Document in DB not see: ${doc.toJson()}")
-        return json.decodeFromString(clazz.serializer(), doc.toJson())
+    fun findById(id: String): T? {
+        return provider.findById(id, entityClass)
     }
 
-    override fun findAll(): List<T> {
-        return collection.find().map { doc ->
-            val docJson = doc.toJson()
-            println("📦 Document in DB: $docJson") // debug
-            json.decodeFromString(clazz.serializer(), docJson)
-        }.toList()
+    fun findOne(filter: Filter): T? {
+       return provider.findOne(filter, entityClass)
+    }
+
+    fun find(filter: Filter): List<T> {
+        return provider.find(filter, entityClass)
     }
 }
