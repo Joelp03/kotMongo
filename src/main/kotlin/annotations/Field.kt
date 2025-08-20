@@ -2,4 +2,4 @@ package org.kotMongo.annotations
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Id(val value: String = "_id")
+annotation class Field(val value: String = "")

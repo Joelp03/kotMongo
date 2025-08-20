@@ -23,22 +23,21 @@ class MongoRepository<T : Any>(
 
     init {
         val docAnnotation = clazz.findAnnotation<Document>()
-            ?: throw IllegalArgumentException("Clase ${clazz.simpleName} no tiene @Document")
+            ?: throw IllegalArgumentException("Class ${clazz.simpleName} is not annotated with @Document")
 
         collection = db.getCollection(docAnnotation.value)
 
     }
 
     override fun insert(entity: T) {
-        println("📦 Inserting entity: $entity")
         val json = Json.encodeToString(clazz.serializer(), entity)
         val document = BsonDocument.parse(json)
         collection.insertOne(document)
     }
 
     override fun findById(id: String): T? {
-        println("📦 Finding entity by id: $id")
         val doc = collection.find(Filters.eq("id", id)).first() ?: return null
+        println("📦 Document in DB not see: ${doc.toJson()}")
         return json.decodeFromString(clazz.serializer(), doc.toJson())
     }
 
@@ -49,5 +48,4 @@ class MongoRepository<T : Any>(
             json.decodeFromString(clazz.serializer(), docJson)
         }.toList()
     }
-
 }
