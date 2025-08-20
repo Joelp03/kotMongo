@@ -1,4 +1,4 @@
-package org.kotMongo.model
+package schemas
 
 import kotlinx.serialization.Serializable
 import org.kotMongo.annotations.Document

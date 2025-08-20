@@ -14,7 +14,7 @@ import org.bson.Document as BsonDocument
 @OptIn(InternalSerializationApi::class)
 class MongoRepository<T : Any>(
     private val clazz: KClass<T>,
-   val db: MongoDatabase
+    val db: MongoDatabase
 ) : CrudRepository<T> {
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -25,20 +25,20 @@ class MongoRepository<T : Any>(
         val docAnnotation = clazz.findAnnotation<Document>()
             ?: throw IllegalArgumentException("Clase ${clazz.simpleName} no tiene @Document")
 
-
         collection = db.getCollection(docAnnotation.value)
-
 
     }
 
     override fun insert(entity: T) {
+        println("📦 Inserting entity: $entity")
         val json = Json.encodeToString(clazz.serializer(), entity)
         val document = BsonDocument.parse(json)
         collection.insertOne(document)
     }
 
     override fun findById(id: String): T? {
-        val doc = collection.find(Filters.eq("_id", id)).first() ?: return null
+        println("📦 Finding entity by id: $id")
+        val doc = collection.find(Filters.eq("id", id)).first() ?: return null
         return json.decodeFromString(clazz.serializer(), doc.toJson())
     }
 
