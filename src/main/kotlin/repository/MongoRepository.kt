@@ -2,6 +2,7 @@ package org.kotMongo.repository
 
 import kotlin.reflect.KClass
 import org.kotMongo.mongo.Filter
+import org.kotMongo.mongo.MongoProvider
 
 abstract class MongoRepository<T: Any>(private val entityClass: KClass<T>) {
     private val provider = MongoProvider()

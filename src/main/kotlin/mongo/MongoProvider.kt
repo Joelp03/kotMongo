@@ -1,25 +1,13 @@
-package org.kotMongo.repository
+package org.kotMongo.mongo
 
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.ReplaceOptions
-import org.bson.types.ObjectId
 import org.bson.Document as BsonDocument
+import org.bson.types.ObjectId
 import org.kotMongo.annotations.Document
 import org.kotMongo.annotations.Field
 import org.kotMongo.annotations.Id
-import org.kotMongo.mongo.AndFilter
-import org.kotMongo.mongo.EqFilter
-import org.kotMongo.mongo.Filter
-import org.kotMongo.mongo.GtFilter
-import org.kotMongo.mongo.GteFilter
-import org.kotMongo.mongo.InFilter
-import org.kotMongo.mongo.LtFilter
-import org.kotMongo.mongo.LteFilter
-import org.kotMongo.mongo.MongoConfig
-import org.kotMongo.mongo.NeFilter
-import org.kotMongo.mongo.OrFilter
-import org.kotMongo.mongo.RegexFilter
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberProperties
