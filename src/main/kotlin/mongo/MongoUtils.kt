@@ -54,7 +54,7 @@ infix fun <T, V> KProperty1<T, V>.gt(value: V): Filter = GtFilter(this.name, val
 infix fun <T, V> KProperty1<T, V>.gte(value: V): Filter = GteFilter(this.name, value)
 infix fun <T, V> KProperty1<T, V>.lt(value: V): Filter = LtFilter(this.name, value)
 infix fun <T, V> KProperty1<T, V>.lte(value: V): Filter = LteFilter(this.name, value)
-infix fun <T, V> KProperty1<T, V>.`in`(values: List<V>): Filter = InFilter(this.name, values)
+infix fun <T, V> KProperty1<T, V>.inF(values: List<V>): Filter = InFilter(this.name, values)
 infix fun <T> KProperty1<T, String>.regex(pattern: String): Filter = RegexFilter(this.name, pattern)
 
 // logical operators

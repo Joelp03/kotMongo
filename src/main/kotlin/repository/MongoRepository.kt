@@ -25,4 +25,16 @@ abstract class MongoRepository<T: Any>(private val entityClass: KClass<T>) {
     fun find(filter: Filter): List<T> {
         return provider.find(filter, entityClass)
     }
+
+    fun findAll(): List<T> {
+        return provider.findAll(entityClass)
+    }
+
+    fun upsert(filter: Filter, entity: T): T {
+        return provider.upsert(filter, entity)
+    }
+
+    fun deleteOne(filter: Filter): Boolean {
+        return provider.deleteOne(filter, entityClass)
+    }
 }

@@ -2,6 +2,7 @@ package org.kotMongo.repository
 
 import com.mongodb.client.MongoCollection
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.ReplaceOptions
 import org.bson.types.ObjectId
 import org.bson.Document as BsonDocument
 import org.kotMongo.annotations.Document
@@ -30,14 +31,14 @@ class MongoProvider {
 
     fun <T: Any> insert(entity: T): T {
         val collection = getCollection(entity::class)
-        val doc = entityToDoc(entity)
+        val doc = entityToDocument(entity)
         collection.insertOne(doc)
         return entity
     }
 
     fun <T: Any> insertMany(entities: List<T>): List<T> {
         val collection = getCollection(entities.first()::class)
-        val docs = entities.map { entityToDoc(it) }
+        val docs = entities.map { entityToDocument(it) }
         collection.insertMany(docs)
         return entities
     }
@@ -46,21 +47,44 @@ class MongoProvider {
         val collection = getCollection(entityClass)
         val resolvedFilter = resolveFilter(filter, entityClass)
         val docs = collection.find(resolvedFilter).toList()
-        return docs.map { docToEntity(it, entityClass) }
+        return docs.map { documentToEntity(it, entityClass) }
+    }
+
+    fun <T : Any> findAll(entityClass: KClass<T>): List<T> {
+        val collection = getCollection(entityClass)
+        return collection.find().map { documentToEntity(it, entityClass) }.toList()
     }
 
     fun <T: Any> findOne(filter: Filter, entityClass: KClass<T>): T? {
         val collection = getCollection(entityClass)
         val resolvedFilter = resolveFilter(filter, entityClass)
         val doc = collection.find(resolvedFilter).first() ?: return null
-        return docToEntity(doc, entityClass)
+        return documentToEntity(doc, entityClass)
     }
 
     fun <T: Any> findById(id: String, entityClass: KClass<T>): T? {
         val collection = getCollection(entityClass)
         val doc = collection.find(Filters.eq("_id", id)).first() ?: return null
-        return docToEntity(doc, entityClass)
+        return documentToEntity(doc, entityClass)
     }
+
+    fun <T : Any> upsert(filter: Filter, entity: T): T {
+        val collection = getCollection(entity::class)
+        val document = entityToDocument(entity)
+        val filterDoc = resolveFilter(filter, entity::class)
+
+        collection.replaceOne(filterDoc, document, ReplaceOptions().upsert(true))
+        return entity
+    }
+
+    fun <T : Any> deleteOne(filter: Filter, entityClass: KClass<T>): Boolean {
+        val collection = getCollection(entityClass)
+        val filterDoc = resolveFilter(filter, entityClass)
+        val result = collection.deleteOne(filterDoc)
+        return result.deletedCount > 0
+    }
+
+
 
 
     private fun <T: Any> getCollection(entityClass: KClass<T>): MongoCollection<BsonDocument> {
@@ -71,7 +95,19 @@ class MongoProvider {
         return collection
     }
 
-    private fun <T: Any> entityToDoc(entity: T): BsonDocument {
+
+    /**
+     * Convert a class entity into a Document BSON [BsonDocument], which will be saved in the database.
+     * During the conversion, the annotations [Field] and [Id] will be respected, to control how the property is stored in the document.
+     * @param entity the entity to convert
+     *
+     * Annotation supported:
+     * - @Id: Indicates that the field is the unique identifier and controls how the property is stored in the document.
+     * - @Field: Converts a custom field into a  Bson Document.
+     *
+     * @return [Document]
+     */
+    private fun <T: Any> entityToDocument(entity: T): BsonDocument {
         val bsonDoc = BsonDocument()
         val entityClass = entity::class
 
@@ -99,7 +135,20 @@ class MongoProvider {
         return bsonDoc
     }
 
-    private fun <T: Any> docToEntity(doc: BsonDocument, entityClass: KClass<T>): T {
+    /**
+     * Convert a Bson Document into an entity.
+     * Assign the document values  to the constructors  based on the following:
+     * the document values will be assigned to the constructor parameters based on the following rules:
+     * @param doc the document to convert
+     * @param entityClass the class of the entity
+     *
+     * - If a field is annotated with @Id, the value will be taken from the _id field in the document.
+     * - If a field is annotated with @Field("name"), the value will be taken from the specified field.
+     * - Otherwise, the field name will be matched directly to the document property.
+     * @return [T]
+     *
+     * */
+    private fun <T: Any> documentToEntity(doc: BsonDocument, entityClass: KClass<T>): T {
         val constructor = entityClass.primaryConstructor!!
         val params = mutableMapOf<String, Any?>()
         for (param in constructor.parameters) {
@@ -149,7 +198,16 @@ class MongoProvider {
         entityClass.memberProperties.find { property ->
             property.javaField?.getAnnotation(Id::class.java) != null
         }
-
+    /**
+     *
+     * Get the real names of the mongodb fields from the names of the class properties.
+     *
+     * @param entityClass - the class of the entity (e.g., `User::class`).
+     * @param propertyName The name of the property in kotlin (e.g., "name").
+     * @return The name of the field in MongoDB:
+     * - If the property has the annotation `@Id`, return "_id".
+     * - if the property has the annotation `@Field` with value, return the value.
+    * */
     private fun <T : Any> getActualFieldName(entityClass: KClass<T>, propertyName: String): String {
         val property = entityClass.memberProperties.find { it.name == propertyName }
         val field = property?.javaField

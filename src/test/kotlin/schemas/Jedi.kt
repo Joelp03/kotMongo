@@ -16,4 +16,5 @@ data class Jedi(
     val age: Int,
     @Field("is_active")
     val active: Boolean = true,
+    val power: Int
 )
